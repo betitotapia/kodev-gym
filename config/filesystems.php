@@ -37,6 +37,11 @@ return [
             'throw' => false,
             'report' => false,
         ],
+         'private' => [                              // ← agregar este
+            'driver' => 'local',
+            'root'   => storage_path('app/private'),
+            'throw'  => false,
+        ],
 
         'public' => [
             'driver' => 'local',

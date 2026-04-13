@@ -15,6 +15,12 @@ class AppServiceProvider extends ServiceProvider
 
         Pago::observe(PagoObserver::class);
 
+        // Modal de cámara global
+            \Filament\Facades\Filament::registerRenderHook(
+                'panels::body.end',
+                fn() => view('components.camara-modal')
+            );
+
         if (app()->environment('local')) {
             $tenant = \App\Models\Tenant::first();
             if ($tenant) {

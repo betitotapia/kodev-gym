@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
+use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;+
+use App\Http\Controllers\CredencialController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,5 +26,8 @@ Route::middleware([
 ])->group(function () {
     Route::get('/', function () {
         return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
+    Route::get('/credencial/{socio}', [CredencialController::class, 'descargar'])
+    ->name('credencial.descargar')
+    ->middleware(['web', \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class]);
     });
 });

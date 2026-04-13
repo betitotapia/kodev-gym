@@ -31,8 +31,29 @@ class SocioInfolist
                     ->placeholder('-'),
                 TextEntry::make('identificacion')
                     ->placeholder('-'),
-                TextEntry::make('fotografia')
-                    ->placeholder('-'),
+                   \Filament\Infolists\Components\TextEntry::make('fotografia')
+                        ->label('Fotografía')
+                        ->formatStateUsing(function ($state) {
+                            if (!$state) {
+                                return '<div style="width:100px;height:100px;border-radius:50%;background:#f3f4f6;border:3px dashed #d1d5db;display:flex;align-items:center;justify-content:center;"><span style="color:#9ca3af;font-size:12px;">Sin foto</span></div>';
+                            }
+
+                            $path = storage_path('app/private/' . $state);
+
+                            if (!file_exists($path)) {
+                                return '<div style="color:#9ca3af;font-size:12px;">Foto no encontrada</div>';
+                            }
+
+                            $base64 = base64_encode(file_get_contents($path));
+                            $ext    = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                            $mime   = in_array($ext, ['jpg', 'jpeg']) ? 'image/jpeg' : 'image/png';
+                            $src    = "data:{$mime};base64,{$base64}";
+
+                            return '<div style="width:100px;height:100px;border-radius:50%;overflow:hidden;border:3px solid #f59e0b;">
+                                <img src="' . $src . '" style="width:100%;height:100%;object-fit:cover;" alt="Foto del socio"/>
+                            </div>';
+                        })
+                        ->html(),
                 TextEntry::make('firma')
                     ->placeholder('-')
                     ->columnSpanFull(),
