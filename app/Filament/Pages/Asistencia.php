@@ -20,16 +20,18 @@ class Asistencia extends Page
     public string $qrInput   = '';
     public ?array $resultado  = null;
     public string $estado     = ''; // 'activa', 'vencida', 'sin_membresia', 'no_encontrado'
+    public array $historialHoy = [];
 
     public function buscarSocio(): void
     {
-        if (!tenancy()->initialized) {
-            $tenant = Tenant::first();
-            if ($tenant) tenancy()->initialize($tenant);
-        }
+        $tenant = \App\Models\Tenant::first();
+            if (!tenancy()->initialized) {
+        $tenant = \App\Models\Tenant::first();
+        if ($tenant) tenancy()->initialize($tenant);
+    }
 
-        $input = trim($this->qrInput);
-        if (empty($input)) return;
+    $input = trim($this->qrInput);
+    if (empty($input)) return;
 
         // Extraer ID del formato GYM-SOCIO-X o número directo
         $socioId = null;
@@ -100,15 +102,55 @@ class Asistencia extends Page
         }
 
         // Registrar asistencia
-        AsistenciaModel::create([
-            'socio_id'     => $socio->id,
-            'membresia_id' => $membresia?->id,
-            'estado'       => $this->estado,
-            'entrada_at'   => now(),
-        ]);
-
+           $tenant = \App\Models\Tenant::first();
+            tenancy()->run($tenant, function() use ($socio, $membresia) {
+                \App\Models\Asistencia::create([
+                    'socio_id'     => $socio->id,
+                    'membresia_id' => $membresia?->id,
+                    'estado'       => $this->estado,
+                    'entrada_at'   => now(),
+                ]);
+            });
         $this->resultado = $datos;
         $this->qrInput   = '';
+        $this->cargarHistorial();
         $this->dispatch('alerta-asistencia', estado: $this->estado, datos: $datos);
     }
+
+   public function mount(): void
+            {
+                if (!tenancy()->initialized) {
+                    $tenant = \App\Models\Tenant::first();
+                    if ($tenant) tenancy()->initialize($tenant);
+                }
+                $this->cargarHistorial();
+            }
+
+    public function cargarHistorial(): void
+                    {
+                        
+                   try {
+                        $tenant = \App\Models\Tenant::first();
+                        $resultado = [];
+
+                        tenancy()->run($tenant, function() use (&$resultado) {
+                            $resultado = AsistenciaModel::with('socio')
+                                ->whereDate('created_at', today())
+                                ->latest()
+                                ->take(10)
+                                ->get()
+                                ->map(fn ($a) => [
+                                    'nombre' => $a->socio->nombre_completo ?? 'Desconocido',
+                                    'hora'   => $a->created_at->format('H:i'),
+                                    'estado' => $a->estado,
+                                ])
+                                ->toArray();
+                        });
+
+                        $this->historialHoy = $resultado;
+                    } catch (\Exception $e) {
+                        $this->historialHoy = [];
+                        \Illuminate\Support\Facades\Log::error('Historial: ' . $e->getMessage());
+                    }
+                }
 }

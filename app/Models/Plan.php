@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Plan extends Model
 {
     protected $table = 'planes';
+    protected $connection = 'tenant';
     
     protected $fillable = [
         'nombre', 'slug', 'descripcion', 
